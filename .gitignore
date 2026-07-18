@@ -13,3 +13,9 @@ computed-style-diff-output/
 **/__screenshots__/
 /.vitest-attachments/
 .tool-versions
+
+# Electron 빌드 산출물
+/release/
+/release-unpacked/
+/out-electron/
+build-resources/

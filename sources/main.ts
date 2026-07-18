@@ -101,6 +101,10 @@ window.setDefaultSelections = async function () {
 // so download/parse overlaps HTML parse and the rest of this file.
 void loadAllMetadata();
 
+// Electron 헤드리스 브릿지 설록 (Electron 환경에서만 동작, 브라우저는 no-op)
+import { installElectronBridge } from "./electron-bridge.ts";
+installElectronBridge();
+
 // TODO: this dynamic import doesn't actually load the deferred CSS in prod.
 // `load-deferred-styles.ts` has no JS exports (only `import "./deferred-entry.scss"`),
 // so after transpile the module body is empty; Rolldown collapses the dynamic

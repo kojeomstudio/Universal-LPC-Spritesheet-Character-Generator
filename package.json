@@ -1,5 +1,6 @@
 {
   "type": "module",
+  "main": "electron/main.js",
   "sideEffects": [
     "sources/state/catalog.ts",
     "sources/vendor-globals.ts"
@@ -36,7 +37,14 @@
     "compute-style-dump": "node scripts/computed-style/dump-computed-styles.js",
     "compute-style-dump:mobile": "node scripts/computed-style/dump-computed-styles.js --preset mobile",
     "compute-style-diff-all": "node scripts/computed-style/computed-style-diff-all.js",
-    "compute-style-diff-all:preview-ports": "node scripts/computed-style/computed-style-diff-all.js --url-a http://localhost:4176 --url-b http://localhost:4177"
+    "compute-style-diff-all:preview-ports": "node scripts/computed-style/computed-style-diff-all.js --url-a http://localhost:4176 --url-b http://localhost:4177",
+    "electron:dev": "npm run build && electron .",
+    "electron:gui": "electron .",
+    "electron:headless": "electron . --headless",
+    "electron:random": "electron . --headless --random",
+    "electron:list": "electron . --headless --list-items",
+    "electron:build": "npm run build && electron-builder --win portable",
+    "electron:build:dir": "npm run build && electron-builder --win --dir"
   },
   "dependencies": {
     "bulma": "1.0.4",
@@ -57,6 +65,8 @@
     "@typescript/native-preview": "^7.0.0-beta.1",
     "chai": "^6.2.2",
     "concurrently": "^10.0.3",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
@@ -88,6 +98,36 @@
       "diff": "^8.0.3",
       "minimatch": "^9.0.7",
       "serialize-javascript": "^7.0.5"
+    }
+  },
+  "build": {
+    "appId": "com.kojeomstudio.lpc-sprite-generator",
+    "productName": "LPC Sprite Generator",
+    "directories": {
+      "output": "release",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "!dist/spritesheets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/spritesheets",
+        "to": "dist/spritesheets",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "LPC-SpriteGenerator-${version}-portable.exe"
     }
   }
 }
