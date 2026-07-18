@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LpcSpriteGen.Core/LpcSpriteGen.Core.csproj" />
+    <Project Path="src/LpcSpriteGen.Headless/LpcSpriteGen.Headless.csproj" />
+    <Project Path="src/LpcSpriteGen.Wpf/LpcSpriteGen.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LpcSpriteGen.Core.Tests/LpcSpriteGen.Core.Tests.csproj" />
+  </Folder>
+</Solution>

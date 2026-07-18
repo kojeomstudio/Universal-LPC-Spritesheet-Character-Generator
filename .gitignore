@@ -19,3 +19,9 @@ computed-style-diff-output/
 /release-unpacked/
 /out-electron/
 build-resources/
+
+# .NET / C# 포팅(dotnet/) 빌드 산출물
+dotnet/**/bin/
+dotnet/**/obj/
+dotnet/.vs/
+dotnet/.idea/
