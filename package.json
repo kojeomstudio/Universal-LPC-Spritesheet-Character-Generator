@@ -103,6 +103,7 @@
   "build": {
     "appId": "com.kojeomstudio.lpc-sprite-generator",
     "productName": "LPC Sprite Generator",
+    "compression": "maximum",
     "directories": {
       "output": "../../bins/lpc-sprite-generator",
       "buildResources": "build-resources"
@@ -112,13 +113,6 @@
       "electron/**/*",
       "package.json",
       "!dist/spritesheets/**"
-    ],
-    "extraResources": [
-      {
-        "from": "dist/spritesheets",
-        "to": "dist/spritesheets",
-        "filter": ["**/*"]
-      }
     ],
     "win": {
       "target": [

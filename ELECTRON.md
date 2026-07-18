@@ -89,7 +89,7 @@ npx electron . --headless --list-items
 ### Windows
 
 ```bash
-# 단일 portable .exe 생성 (~70MB)
+# 단일 portable .exe 생성 (~86MB, spritesheets 제외)
 scripts\build-electron.bat
 
 # 디렉토리 형태로만 빌드 (빠름, 테스트용)
@@ -106,10 +106,31 @@ scripts/build-electron.sh        # 기본 빌드
 scripts/build-electron.sh dir    # 디렉토리 형태
 ```
 
+### spritesheets 분리 (중요)
+
+**spritesheets(365MB, 11만 파일)는 바이너리에서 분리되어 있습니다.** 빌드 시간과
+크기를 합리적으로 유지하기 위한 조치입니다. 실행 시 spritesheets를 참조하는
+3가지 방법:
+
+1. **exe와 같은 디렉토리에 배치** (권장):
+   ```
+   my-app/
+   ├─ LPC-SpriteGenerator-portable.exe
+   └─ spritesheets/          ← tools/lpc-sprite-generator/spritesheets 복사
+   ```
+
+2. **`--spritesheets` 플래그로 경로 지정**:
+   ```bash
+   LPC-SpriteGenerator-portable.exe --spritesheets /path/to/spritesheets
+   ```
+
+3. **개발 모드** (`npx electron .`): 서브모듈 원본 `spritesheets/` 자동 참조.
+
 ### 패키징된 exe에서 헤드리스 모드
 
 ```bash
-LPC-SpriteGenerator-0.0.0-portable.exe --headless --random --output char.png
+# spritesheets 경로 지정 필수 (또는 exe와 같은 디렉토리에 배치)
+LPC-SpriteGenerator-0.0.0-portable.exe --spritesheets ../tools/lpc-sprite-generator/spritesheets --headless --random --output char.png
 LPC-SpriteGenerator-0.0.0-portable.exe --headless --random --count 5 --output-dir ./out
 ```
 

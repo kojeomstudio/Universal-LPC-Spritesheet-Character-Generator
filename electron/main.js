@@ -79,6 +79,24 @@ function resolveDistDir() {
   return path.join(__dirname, "..", "dist");
 }
 
+// spritesheets 경로 해석 (바이너리에서 분리, 원본 위치 참조).
+// 개발: 서브모듈 루트/spritesheets (원본 그대로)
+// 패키지: exe와 같은 디렉토리의 spritesheets/ (사용자가 배포 시 동반)
+// CLI 옵션 --spritesheets <path>로 임의 경로 지정 가능
+function resolveSpritesheetsDir() {
+  // CLI에서 명시적 지정 시 최우선
+  const cliSpritesheetsIdx = process.argv.indexOf("--spritesheets");
+  if (cliSpritesheetsIdx !== -1 && cliSpritesheetsIdx + 1 < process.argv.length) {
+    return path.resolve(process.argv[cliSpritesheetsIdx + 1]);
+  }
+  if (app.isPackaged) {
+    // 패키지: exe와 같은 디렉토리의 spritesheets/
+    return path.join(path.dirname(app.getPath("exe")), "spritesheets");
+  }
+  // 개발: 서브모듈 루트의 spritesheets/
+  return path.join(__dirname, "..", "spritesheets");
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // IPC: 렌더러 → 메인
 // ────────────────────────────────────────────────────────────────────────────
@@ -143,7 +161,6 @@ function createWindow({ show = true } = {}) {
   // EPIPE 방지: stdout이 닫힌 경우 안전하게 무시.
   if (args.isHeadless) {
     win.webContents.on("console-message", (e) => {
-      // Electron 28+: 이벤트 객체에서 message 추출 (레벨/메시지 인자는 deprecated)
       const msg = e?.message ?? "(no message)";
       try {
         if (process.stdout.writable) {
@@ -161,6 +178,17 @@ function createWindow({ show = true } = {}) {
     console.error(`[main] index.html 로드 실패: ${indexPath}\n  ${e.message}`);
     console.error(`[main] 먼저 'npm run build'를 실행해 dist/를 생성하세요.`);
     app.quit(1);
+  });
+
+  // spritesheets 절대경로를 renderer에 주입.
+  // renderer의 load-image.ts가 file:// URL로 변환하여 사용.
+  // spritesheets는 바이너리에서 분리되어 서브모듈/배포 위치의 원본을 참조.
+  const spritesheetsDir = resolveSpritesheetsDir();
+  win.webContents.once("dom-ready", () => {
+    const spritesheetsPath = pathToFileURL(spritesheetsDir).href + "/";
+    win.webContents.executeJavaScript(
+      `window.__SPRITESHEETS_BASE__ = ${JSON.stringify(spritesheetsPath)};`,
+    ).catch(() => {});
   });
 
   return win;

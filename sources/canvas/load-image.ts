@@ -21,12 +21,27 @@ export function resetImageLoadCache(): void {
   inFlight.clear();
 }
 
+/**
+ * Electron 환경에서 spritesheets 절대경로로 변환.
+ * 바이너리에서 spritesheets를 분리했으므로, Electron main 프로세스가
+ * window.__SPRITESHEETS_BASE__에 file:// URL prefix를 주입.
+ * 브라우저에서는 기존 상대경로 유지.
+ */
+function resolveSrc(src: string): string {
+  const base = (window as any).__SPRITESHEETS_BASE__;
+  if (base && src.startsWith("spritesheets/")) {
+    return base + src.slice("spritesheets/".length);
+  }
+  return src;
+}
+
 /** Load an image. Rejects with `Error("Failed to load <src>")` on error. */
 export function loadImage(src: string): Promise<HTMLImageElement> {
-  if (loadedImages[src]) {
-    return Promise.resolve(loadedImages[src]);
+  const resolved = resolveSrc(src);
+  if (loadedImages[resolved]) {
+    return Promise.resolve(loadedImages[resolved]);
   }
-  const existing = inFlight.get(src);
+  const existing = inFlight.get(resolved);
   if (existing) {
     return existing;
   }
@@ -41,36 +56,36 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     resolve = res;
     reject = rej;
   });
-  inFlight.set(src, p);
+  inFlight.set(resolved, p);
 
   // Mark start of image load (span is actual fetch/decode)
   const profiler = (window as WindowWithProfiler).profiler;
   if (profiler) {
-    profiler.mark(`image-load:${src}:start`);
+    profiler.mark(`image-load:${resolved}:start`);
   }
 
   const img = new Image();
   img.onload = () => {
-    loadedImages[src] = img;
-    inFlight.delete(src);
+    loadedImages[resolved] = img;
+    inFlight.delete(resolved);
 
     if (profiler) {
-      profiler.mark(`image-load:${src}:end`);
+      profiler.mark(`image-load:${resolved}:end`);
       profiler.measure(
-        `image-load:${src}`,
-        `image-load:${src}:start`,
-        `image-load:${src}:end`,
+        `image-load:${resolved}`,
+        `image-load:${resolved}:start`,
+        `image-load:${resolved}:end`,
       );
     }
 
     resolve(img);
   };
   img.onerror = () => {
-    inFlight.delete(src);
-    console.error(`Failed to load image: ${src}`);
-    reject(new Error(`Failed to load ${src}`));
+    inFlight.delete(resolved);
+    console.error(`Failed to load image: ${resolved}`);
+    reject(new Error(`Failed to load ${resolved}`));
   };
-  img.src = src;
+  img.src = resolved;
 
   return p;
 }
