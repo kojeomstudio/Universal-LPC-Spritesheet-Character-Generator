@@ -70,11 +70,12 @@ if (args.isHeadless) {
   app.commandLine.appendSwitch("disable-gpu");
 }
 
-// dist 경로 해석 (개발: 프로젝트 루트/dist, 패키지: 리소스 디렉토리)
+// dist 경로 해석 (개발: 프로젝트 루트/dist, 패키지: app.asar 내부의 dist)
+// Electron은 app.asar를 투명하게 처리하므로 app.getAppPath() 기준으로 해석.
 function resolveDistDir() {
-  // 패키징된 앱: process.resourcesPath/dist
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, "dist");
+    // 패키징 시: app.asar 내부의 dist/ (appPath = resources/app.asar)
+    return path.join(app.getAppPath(), "dist");
   }
   return path.join(__dirname, "..", "dist");
 }
