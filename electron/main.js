@@ -153,8 +153,12 @@ function createWindow({ show = true } = {}) {
       preload: path.join(__dirname, "preload.mjs"),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false, // preload에서 Node API 사용 (fs는 main에서만)
+      sandbox: false,
       webgl: true,
+      // 로컬 데스크톱 도구: file:// 기반 renderer가 lpc-sprites:// 프로토콜의
+      // 로컬 spritesheets 이미지에 접근할 수 있도록 webSecurity 비활성화.
+      // (외부 네트워크 접근 없음, 로컬 파일만 취급하므로 안전)
+      webSecurity: false,
     },
   });
 
@@ -181,9 +185,9 @@ function createWindow({ show = true } = {}) {
     app.quit(1);
   });
 
-  // spritesheets 절대경로를 renderer에 주입.
-  // renderer의 load-image.ts가 file:// URL로 변환하여 사용.
-  // spritesheets는 바이너리에서 분리되어 서브모듈/배포 위치의 원본을 참조.
+  // spritesheets 절대경로를 renderer에 주입 (file:// URL).
+  // webSecurity: false로 로컬 파일 접근 허용.
+  // load-image.ts의 resolveSrc가 이 접두사를 붙여 이미지를 로드.
   const spritesheetsDir = resolveSpritesheetsDir();
   win.webContents.once("dom-ready", () => {
     const spritesheetsPath = pathToFileURL(spritesheetsDir).href + "/";
