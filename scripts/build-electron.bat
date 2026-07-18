@@ -6,7 +6,8 @@ REM 사용법:
 REM   scripts\build-electron.bat              기본 빌드 (portable exe)
 REM   scripts\build-electron.bat dir          디렉토리 형태로만 빌드 (테스트용, 빠름)
 REM
-REM 출력: release\LPC-SpriteGenerator-0.0.0-portable.exe
+REM 출력: ..\..\bins\lpc-sprite-generator\LPC-SpriteGenerator-0.0.0-portable.exe
+REM       (워크스페이스 루트의 bins/ 디렉토리, 모든 도구가 공유)
 
 setlocal
 
@@ -30,12 +31,13 @@ if errorlevel 1 goto :error
 
 echo.
 echo === 빌드 완료 ===
-if exist "release\*.exe" (
-  for %%f in (release\*.exe) do echo 산출물: release\%%~nxf ^(%%~zf bytes^)
-) else if exist "release\win-unpacked" (
-  echo 산출물: release\win-unpacked\ ^(디렉토리 형태^)
+echo 출력 디렉토리: ..\..\bins\lpc-sprite-generator\
+if exist "..\..\bins\lpc-sprite-generator\*.exe" (
+  for %%f in (..\..\bins\lpc-sprite-generator\*.exe) do echo 산출물: %%~nxf ^(%%~zf bytes^)
+) else if exist "..\..\bins\lpc-sprite-generator\win-unpacked" (
+  echo 산출물: ..\..\bins\lpc-sprite-generator\win-unpacked\ ^(디렉토리 형태^)
 ) else (
-  echo 경고: 산출물을 찾을 수 없습니다. release\ 확인.
+  echo 경고: 산출물을 찾을 수 없습니다. ..\..\bins\lpc-sprite-generator\ 확인.
 )
 
 exit /b 0

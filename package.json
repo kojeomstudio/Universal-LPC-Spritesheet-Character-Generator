@@ -104,7 +104,7 @@
     "appId": "com.kojeomstudio.lpc-sprite-generator",
     "productName": "LPC Sprite Generator",
     "directories": {
-      "output": "release",
+      "output": "../../bins/lpc-sprite-generator",
       "buildResources": "build-resources"
     },
     "files": [

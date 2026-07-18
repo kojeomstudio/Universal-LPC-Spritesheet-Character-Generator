@@ -23,6 +23,8 @@ npm install                    # 의존성 설치 (최초 1회)
 
 # GUI 모드
 npm run electron:dev           # 빌드 + Electron 실행 (브라우저 UI)
+# GUI 모드 + 저장 디렉토리 지정 (다운로드 시 다이얼로그 없이 자동 저장)
+npx electron . --save-dir ./my-characters
 
 # 헤드리스 CLI 모드
 npm run electron:headless -- --list-items          # 사용 가능한 부품 목록
@@ -43,8 +45,9 @@ electron . --headless [옵션]
 | `--list-items` | 사용 가능한 부품(itemId) 목록 출력 | `--list-items` |
 | `--random` | 랜덤 파츠 조합으로 캐릭터 생성 | `--random` |
 | `--selections <path>` | 지정한 selections JSON으로 생성 | `--selections my-char.json` |
-| `--output <path>` | 출력 PNG 경로 (단일 생성 시) | `--output char.png` |
+| `--output <path>` | 출력 PNG 경로 (단일 생성 시, GUI/헤드리스 공통) | `--output char.png` |
 | `--output-dir <dir>` | 출력 디렉토리 (배치 생성 시) | `--output-dir ./out` |
+| `--save-dir <dir>` | **GUI 모드** 다운로드 기본 디렉토리 (다이얼로그 없이 자동 저장) | `--save-dir ./my-chars` |
 | `--count <N>` | 생성할 캐릭터 수 (기본 1) | `--count 10` |
 | `--seed <N>` | 랜덤 시드 (재현 가능한 생성) | `--seed 42` |
 | `--body-type <type>` | 체형 (male/female/teen/child/muscular/pregnant) | `--body-type female` |
@@ -93,7 +96,8 @@ scripts\build-electron.bat
 scripts\build-electron.bat dir
 ```
 
-출력: `release/LPC-SpriteGenerator-0.0.0-portable.exe`
+출력: `../../bins/lpc-sprite-generator/LPC-SpriteGenerator-0.0.0-portable.exe`
+(워크스페이스 루트의 `bins/` 디렉토리 — 모든 도구가 공유)
 
 ### Unix/macOS/Linux
 

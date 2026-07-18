@@ -49,6 +49,8 @@ function parseArgs(argv) {
     count: parseInt(get("--count") ?? "1", 10),
     seed: get("--seed") ? parseInt(get("--seed"), 10) : null,
     bodyType: get("--body-type") ?? "male",
+    // GUI 모드: 다운로드 기본 디렉토리 (--save-dir). 없으면 다이얼로그.
+    saveDir: get("--save-dir"),
     width: parseInt(get("--width") ?? "1280", 10),
     height: parseInt(get("--height") ?? "3456", 10),
   };
@@ -81,16 +83,30 @@ function resolveDistDir() {
 // IPC: 렌더러 → 메인
 // ────────────────────────────────────────────────────────────────────────────
 
-// PNG 버퍼를 파일로 저장 (GUI 다운로드 인터셉트)
+// PNG 버퍼를 파일로 저장 (GUI 다운로드 인터셉트).
+// --save-dir 지정 시 다이얼로그 없이 자동 저장. 없으면 저장 다이얼로그.
 ipcMain.handle("save-buffer", async (_event, arrayBuffer, defaultName) => {
-  const result = await dialog.showSaveDialog({
-    defaultPath: defaultName ?? "character-spritesheet.png",
-    filters: [{ name: "PNG", extensions: ["png"] }],
-  });
-  if (result.canceled || !result.filePath) return { ok: false, canceled: true };
+  const name = defaultName ?? "character-spritesheet.png";
+  let outPath;
+  if (args.saveDir) {
+    // 자동 저장 모드: saveDir/name 에 저장
+    try {
+      fs.mkdirSync(args.saveDir, { recursive: true });
+    } catch { /* 이미 존재 */ }
+    outPath = path.join(args.saveDir, name);
+  } else {
+    // 다이얼로그 모드
+    const defaultPath = args.saveDir ? path.join(args.saveDir, name) : name;
+    const result = await dialog.showSaveDialog({
+      defaultPath,
+      filters: [{ name: "PNG", extensions: ["png"] }],
+    });
+    if (result.canceled || !result.filePath) return { ok: false, canceled: true };
+    outPath = result.filePath;
+  }
   try {
-    fs.writeFileSync(result.filePath, Buffer.from(arrayBuffer));
-    return { ok: true, path: result.filePath };
+    fs.writeFileSync(outPath, Buffer.from(arrayBuffer));
+    return { ok: true, path: outPath };
   } catch (e) {
     return { ok: false, error: e.message };
   }
