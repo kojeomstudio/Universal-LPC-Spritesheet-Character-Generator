@@ -12,10 +12,12 @@
 //
 // The THREE duplicated folder-mapping blocks in the TS source are consolidated here into one
 // ResolveAnimFolder() helper.
+//
+// Image backend: SkiaSharp (MIT). SKCanvas replaces Graphics; SKBitmap replaces Bitmap.
+// SkiaSharp's SKSamplingOptions with Default filter gives nearest-neighbor-equivalent
+// 1:1 pixel copies (matches the old InterpolationMode.NearestNeighbor + PixelOffsetMode.Half).
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.Threading.Tasks;
 using LpcSpriteGen.Core.Catalog;
@@ -24,6 +26,7 @@ using LpcSpriteGen.Core.Constants;
 using LpcSpriteGen.Core.CustomAnimations;
 using LpcSpriteGen.Core.Palettes;
 using LpcSpriteGen.Core.Paths;
+using SkiaSharp;
 
 namespace LpcSpriteGen.Core.Rendering;
 
@@ -62,7 +65,7 @@ public sealed class Renderer
     /// Compose a full LPC spritesheet (832 × 3456, plus appended custom-animation area
     /// when needed) for the given selections + bodyType.
     /// </summary>
-    public async Task<Bitmap> RenderCharacterAsync(Selections selections, string bodyType)
+    public async Task<SKBitmap> RenderCharacterAsync(Selections selections, string bodyType)
     {
         var drawCalls = new List<DrawCall>();
         var customAnimationItems = new List<DrawCall>(); // diverted to custom-area pass
@@ -154,13 +157,14 @@ public sealed class Renderer
         drawCalls.Sort((a, b) => a.ZPos.CompareTo(b.ZPos));
 
         // NOTE: canvas is RETURNED to the caller — must not be wrapped in `using`.
-        var canvas = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(canvas))
+        // BGRA8888 + Premul alpha matches the old Format32bppArgb compositing surface.
+        var canvasBmp = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        // Erase to fully transparent (SkiaSharp bitmaps are not zero-initialized reliably).
+        canvasBmp.Erase(SKColors.Transparent);
+        using (var canvas = new SKCanvas(canvasBmp))
         {
-            g.Clear(Color.FromArgb(0, 0, 0, 0));
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-
+            // Nearest-neighbor sampling for pixel-perfect 1:1 blits (no interpolation),
+            // matching the old InterpolationMode.NearestNeighbor setting.
             var loaded = await _imageLoader.LoadParallelAsync(drawCalls, c => c.SpritePath);
             foreach (var (call, bmp) in loaded)
             {
@@ -168,16 +172,14 @@ public sealed class Renderer
                 var toDraw = call.Recolors != null
                     ? await _recolorService.RecolorAsync(bmp, call.ItemId, call.Recolors, call.SpritePath)
                     : bmp;
-                g.DrawImage(toDraw, 0, call.YPos);
+                canvas.DrawBitmap(toDraw, 0, call.YPos);
             }
         }
 
         // ── Pass 4: custom-animation area composition ───────────────────────────────
         if (addedCustomAnimations.Count > 0)
         {
-            using var g2 = Graphics.FromImage(canvas);
-            g2.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            g2.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+            using var canvas2 = new SKCanvas(canvasBmp);
 
             foreach (var name in addedCustomAnimations)
             {
@@ -197,7 +199,7 @@ public sealed class Renderer
                     var toDraw = call.Recolors != null
                         ? await _recolorService.RecolorAsync(bmp, call.ItemId, call.Recolors, call.SpritePath)
                         : bmp;
-                    g2.DrawImage(toDraw, 0, offsetY);
+                    canvas2.DrawBitmap(toDraw, 0, offsetY);
                 }
 
                 // Extract base-anim frames from standard items and re-grid into the area.
@@ -214,13 +216,13 @@ public sealed class Renderer
                         var toDraw = call.Recolors != null
                             ? await _recolorService.RecolorAsync(bmp, call.ItemId, call.Recolors, call.SpritePath)
                             : bmp;
-                        DrawFramesToCustomAnimation(g2, def, offsetY, toDraw);
+                        DrawFramesToCustomAnimation(canvas2, def, offsetY, toDraw);
                     }
                 }
             }
         }
 
-        return canvas;
+        return canvasBmp;
     }
 
     /// <summary>
@@ -245,7 +247,7 @@ public sealed class Renderer
     /// Re-grid frames from the source standard sheet into a custom-animation's cells.
     /// Port of sources/canvas/draw-frames.ts:drawFramesToCustomAnimation.
     /// </summary>
-    private static void DrawFramesToCustomAnimation(Graphics g, CustomAnimationDefinition def, int offsetY, Bitmap src)
+    private static void DrawFramesToCustomAnimation(SKCanvas g, CustomAnimationDefinition def, int offsetY, SKBitmap src)
     {
         int frameSize = def.FrameSize;
         bool isSingleAnimation = src.Height <= 256; // single-anim sheet (4 rows × 64)
@@ -285,19 +287,20 @@ public sealed class Renderer
     /// Draw a square frame from src to dest. Same size → 1:1 copy. Larger dest → center
     /// (no upscale). Port of draw-frames.ts:drawFrameToFrame.
     /// </summary>
-    private static void DrawFrameToFrame(Graphics g, int destX, int destY, int destSize, Bitmap src, int srcX, int srcY, int srcSize)
+    private static void DrawFrameToFrame(SKCanvas g, int destX, int destY, int destSize, SKBitmap src, int srcX, int srcY, int srcSize)
     {
+        var srcRectI = new SKRectI(srcX, srcY, srcX + srcSize, srcY + srcSize);
         if (destSize == srcSize)
         {
-            g.DrawImage(src, new Rectangle(destX, destY, destSize, destSize),
-                new Rectangle(srcX, srcY, srcSize, srcSize), GraphicsUnit.Pixel);
+            // 1:1 copy at integer-aligned dest — SkiaSharp default sampling (no filter) is
+            // nearest-neighbor, equivalent to the old GraphicsUnit.Pixel blit.
+            g.DrawBitmap(src, srcRectI, new SKRectI(destX, destY, destX + destSize, destY + destSize));
         }
         else
         {
             // Center src at its native pixel size within the larger dest cell.
             int offset = (destSize - srcSize) / 2;
-            g.DrawImage(src, new Rectangle(destX + offset, destY + offset, srcSize, srcSize),
-                new Rectangle(srcX, srcY, srcSize, srcSize), GraphicsUnit.Pixel);
+            g.DrawBitmap(src, srcRectI, new SKRectI(destX + offset, destY + offset, destX + offset + srcSize, destY + offset + srcSize));
         }
     }
 }

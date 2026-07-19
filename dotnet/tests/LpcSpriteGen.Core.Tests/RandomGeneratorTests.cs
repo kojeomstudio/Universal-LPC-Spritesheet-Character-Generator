@@ -6,6 +6,7 @@ using LpcSpriteGen.Core.Characters;
 using LpcSpriteGen.Core.Constants;
 using LpcSpriteGen.Core.Palettes;
 using LpcSpriteGen.Core.Rendering;
+using SkiaSharp;
 using Xunit;
 
 namespace LpcSpriteGen.Core.Tests;
@@ -139,27 +140,21 @@ public class RandomGeneratorTests
         Assert.Equal(distinct, r.Credits.Count);
     }
 
-    private static (int nonTransparent, int uniqueColors) CountPixels(System.Drawing.Bitmap bmp)
+    private static (int nonTransparent, int uniqueColors) CountPixels(SKBitmap bmp)
     {
-        var rect = new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height);
-        var data = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-        try
+        // SkiaSharp: direct span access replaces LockBits + Marshal.Copy.
+        var span = bmp.GetPixelSpan();
+        int bytes = span.Length;
+        int nonTransparent = 0;
+        var colors = new System.Collections.Generic.HashSet<int>();
+        for (int i = 0; i < bytes; i += 4)
         {
-            int bytes = System.Math.Abs(data.Stride) * bmp.Height;
-            var buf = new byte[bytes];
-            System.Runtime.InteropServices.Marshal.Copy(data.Scan0, buf, 0, bytes);
-            int nonTransparent = 0;
-            var colors = new System.Collections.Generic.HashSet<int>();
-            for (int i = 0; i < bytes; i += 4)
-            {
-                byte a = buf[i + 3];
-                if (a == 0) continue;
-                nonTransparent++;
-                int rgb = (buf[i + 2] << 16) | (buf[i + 1] << 8) | buf[i];
-                colors.Add(rgb);
-            }
-            return (nonTransparent, colors.Count);
+            byte a = span[i + 3];
+            if (a == 0) continue;
+            nonTransparent++;
+            int rgb = (span[i + 2] << 16) | (span[i + 1] << 8) | span[i]; // R,G,B (BGRA layout)
+            colors.Add(rgb);
         }
-        finally { bmp.UnlockBits(data); }
+        return (nonTransparent, colors.Count);
     }
 }

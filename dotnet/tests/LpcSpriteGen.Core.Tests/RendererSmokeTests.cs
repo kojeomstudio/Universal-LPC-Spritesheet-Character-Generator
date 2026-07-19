@@ -5,18 +5,16 @@
 // It was produced with body+head+expression (male, light recolor) — the canonical "correct"
 // rendering from the JS project. The C# port must produce a sheet of the same dimensions
 // with the same non-transparent pixel count (within tolerance) and the same color palette.
+//
+// Image backend: SkiaSharp (MIT) — replaces System.Drawing.Common.
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using LpcSpriteGen.Core.Catalog;
 using LpcSpriteGen.Core.Characters;
 using LpcSpriteGen.Core.Constants;
 using LpcSpriteGen.Core.Rendering;
+using SkiaSharp;
 using Xunit;
 
 namespace LpcSpriteGen.Core.Tests;
@@ -104,7 +102,8 @@ public class RendererSmokeTests
             // Skip on CI / clean environments — only meaningful locally.
             return;
         }
-        using var baseline = new Bitmap(baselinePath);
+        using var baselineFs = File.OpenRead(baselinePath);
+        using var baseline = SKBitmap.Decode(baselineFs);
         var cat = LoadCatalog();
         var renderer = new Renderer(cat, Path.Combine(RepoRoot, "spritesheets"));
         using var csharp = await renderer.RenderCharacterAsync(DefaultMaleCharacter(), "male");
@@ -128,35 +127,39 @@ public class RendererSmokeTests
         using var sheet = await renderer.RenderCharacterAsync(DefaultMaleCharacter(), "male");
         int y0 = 8 * LpcConstants.FrameSize;
         int y1 = 12 * LpcConstants.FrameSize;
-        using var walk = sheet.Clone(new Rectangle(0, y0, LpcConstants.SheetWidth, y1 - y0), PixelFormat.Format32bppArgb);
+        var rect = SKRectI.Create(0, y0, LpcConstants.SheetWidth, y1 - y0);
+        using var walk = ExtractSubset(sheet, rect);
         var (px, _) = CountPixels(walk);
         Assert.True(px > 10_000, $"walk block empty: {px}");
     }
 
-    private static (int nonTransparent, int uniqueColors) CountPixels(Bitmap bmp)
+    /// <summary>Wrapper around SKBitmap.ExtractSubset (instance API writes into a dest).</summary>
+    private static SKBitmap ExtractSubset(SKBitmap src, SKRectI rect)
     {
-        var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
-        var data = bmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-        try
+        var dst = new SKBitmap(rect.Width, rect.Height, src.ColorType, src.AlphaType);
+        if (!src.ExtractSubset(dst, rect))
         {
-            int bytes = System.Math.Abs(data.Stride) * bmp.Height;
-            var buf = new byte[bytes];
-            Marshal.Copy(data.Scan0, buf, 0, bytes);
-            int nonTransparent = 0;
-            var colors = new HashSet<int>();
-            for (int i = 0; i < bytes; i += 4)
-            {
-                byte a = buf[i + 3];
-                if (a == 0) continue;
-                nonTransparent++;
-                int rgb = (buf[i + 2] << 16) | (buf[i + 1] << 8) | buf[i]; // R,G,B
-                colors.Add(rgb);
-            }
-            return (nonTransparent, colors.Count);
+            dst.Dispose();
+            throw new InvalidOperationException($"ExtractSubset failed for rect {rect}");
         }
-        finally
+        return dst;
+    }
+
+    private static (int nonTransparent, int uniqueColors) CountPixels(SKBitmap bmp)
+    {
+        // SkiaSharp: direct span access replaces LockBits + Marshal.Copy.
+        var span = bmp.GetPixelSpan();
+        int bytes = span.Length;
+        int nonTransparent = 0;
+        var colors = new HashSet<int>();
+        for (int i = 0; i < bytes; i += 4)
         {
-            bmp.UnlockBits(data);
+            byte a = span[i + 3];
+            if (a == 0) continue;
+            nonTransparent++;
+            int rgb = (span[i + 2] << 16) | (span[i + 1] << 8) | span[i]; // R,G,B (BGRA layout)
+            colors.Add(rgb);
         }
+        return (nonTransparent, colors.Count);
     }
 }

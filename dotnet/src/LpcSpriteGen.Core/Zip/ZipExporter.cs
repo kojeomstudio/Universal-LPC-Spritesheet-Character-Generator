@@ -6,10 +6,11 @@
 //   ByAnimation       : walk.png, idle.png, ...            (one PNG per animation, full 4-direction strip)
 //   ByItem            : body/walk.png, head/walk.png, ...  (one PNG per item × animation)
 //   ByFrame           : walk/0001.png, walk/0002.png, ...  (one PNG per frame across all anims)
+//
+// Image backend: SkiaSharp (MIT). Frame extraction uses SKBitmap.ExtractSubset (replaces
+// System.Drawing Bitmap.Clone(rect, format)); PNG encoding via SKImage.Encode.
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -18,6 +19,7 @@ using LpcSpriteGen.Core.Catalog;
 using LpcSpriteGen.Core.Characters;
 using LpcSpriteGen.Core.Constants;
 using LpcSpriteGen.Core.Rendering;
+using SkiaSharp;
 
 namespace LpcSpriteGen.Core.Zip;
 
@@ -64,9 +66,9 @@ public sealed class ZipExporter
             var cfg = AnimationTables.AnimationConfigs.FirstOrDefault(c => c.Key == anim).Value
                       ?? new AnimationConfig(yOffset / LpcConstants.FrameSize, 4, new[] { 0 });
             int num = cfg.Num;
-            var rect = new Rectangle(0, yOffset, LpcConstants.SheetWidth, num * LpcConstants.FrameSize);
+            var rect = SKRectI.Create(0, yOffset, LpcConstants.SheetWidth, num * LpcConstants.FrameSize);
             if (rect.Bottom > sheet.Height) continue;
-            using var animSheet = sheet.Clone(rect, PixelFormat.Format32bppArgb);
+            using var animSheet = ExtractSubset(sheet, rect);
             AddPngEntry(zip, $"{anim}.png", animSheet);
         }
     }
@@ -87,9 +89,9 @@ public sealed class ZipExporter
                 {
                     var cfg = AnimationTables.AnimationConfigs.FirstOrDefault(c => c.Key == anim).Value
                               ?? new AnimationConfig(yOffset / LpcConstants.FrameSize, 4, new[] { 0 });
-                    var rect = new Rectangle(0, yOffset, LpcConstants.SheetWidth, cfg.Num * LpcConstants.FrameSize);
+                    var rect = SKRectI.Create(0, yOffset, LpcConstants.SheetWidth, cfg.Num * LpcConstants.FrameSize);
                     if (rect.Bottom > sheet.Height) continue;
-                    using var animSheet = sheet.Clone(rect, PixelFormat.Format32bppArgb);
+                    using var animSheet = ExtractSubset(sheet, rect);
                     AddPngEntry(zip, $"{sel.ItemId}/{anim}.png", animSheet);
                 }
             }
@@ -115,19 +117,38 @@ public sealed class ZipExporter
                 {
                     int x = col * LpcConstants.FrameSize;
                     int y = yOffset + dir * LpcConstants.FrameSize;
-                    var rect = new Rectangle(x, y, LpcConstants.FrameSize, LpcConstants.FrameSize);
+                    var rect = SKRectI.Create(x, y, LpcConstants.FrameSize, LpcConstants.FrameSize);
                     if (rect.Bottom > sheet.Height || rect.Right > sheet.Width) continue;
-                    using var frame = sheet.Clone(rect, PixelFormat.Format32bppArgb);
+                    using var frame = ExtractSubset(sheet, rect);
                     AddPngEntry(zip, $"{anim}/{anim}_d{dir}_f{col:D2}.png", frame);
                 }
             }
         }
     }
 
-    private static void AddPngEntry(ZipArchive zip, string entryName, Bitmap bmp)
+    /// <summary>
+    /// Extract a sub-rectangle from a source SKBitmap as a new disposable SKBitmap.
+    /// Wraps SKBitmap.ExtractSubset (instance method: writes into a provided destination)
+    /// so callers can use a `using` pattern like the old Bitmap.Clone(rect, format).
+    /// </summary>
+    private static SKBitmap ExtractSubset(SKBitmap src, SKRectI rect)
+    {
+        var dst = new SKBitmap(rect.Width, rect.Height, src.ColorType, src.AlphaType);
+        if (!src.ExtractSubset(dst, rect))
+        {
+            dst.Dispose();
+            throw new InvalidOperationException($"ExtractSubset failed for rect {rect}");
+        }
+        return dst;
+    }
+
+    private static void AddPngEntry(ZipArchive zip, string entryName, SKBitmap bmp)
     {
         var entry = zip.CreateEntry(entryName, CompressionLevel.Optimal);
         using var stream = entry.Open();
-        bmp.Save(stream, ImageFormat.Png);
+        using var image = SKImage.FromBitmap(bmp);
+        // Encode to PNG; SKEncodedImageFormat.Png is lossless and matches the old ImageFormat.Png.
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        data.SaveTo(stream);
     }
 }

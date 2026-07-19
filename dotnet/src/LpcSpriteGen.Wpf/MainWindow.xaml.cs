@@ -5,8 +5,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,7 +20,7 @@ using LpcSpriteGen.Core.Constants;
 using LpcSpriteGen.Core.Diagnostics;
 using LpcSpriteGen.Core.Zip;
 using Microsoft.Win32;
-using Image = System.Drawing.Image;
+using SkiaSharp;
 
 namespace LpcSpriteGen.Wpf;
 
@@ -32,7 +30,7 @@ public partial class MainWindow : Window
     private Core.Rendering.Renderer? _renderer;
     private readonly Selections _selections = new();
     private string _bodyType = "male";
-    private Bitmap? _lastFullSheet;
+    private SKBitmap? _lastFullSheet;
     private string? _previewAnimation = "walk";
 
     // Selection list view-model rows.
@@ -252,25 +250,34 @@ public partial class MainWindow : Window
 
         int y0 = row * LpcConstants.FrameSize;
         int y1 = (row + numRows) * LpcConstants.FrameSize;
-        Rectangle crop;
-        try
-        {
-            crop = new Rectangle(0, y0,
-                Math.Min(LpcConstants.SheetWidth, _lastFullSheet.Width),
-                Math.Min(y1 - y0, _lastFullSheet.Height - y0));
-        }
-        catch { return; }
-        if (crop.Width <= 0 || crop.Height <= 0) return;
+        int cropW = Math.Min(LpcConstants.SheetWidth, _lastFullSheet.Width);
+        int cropH = Math.Min(y1 - y0, _lastFullSheet.Height - y0);
+        if (cropW <= 0 || cropH <= 0) return;
 
-        using var animBlock = _lastFullSheet.Clone(crop, PixelFormat.Format32bppArgb);
+        var cropRect = SKRectI.Create(0, y0, cropW, cropH);
+        using var animBlock = ExtractSubset(_lastFullSheet, cropRect);
         PreviewImage.Source = ToBitmapImage(animBlock);
     }
 
-    private static BitmapImage ToBitmapImage(Bitmap bmp)
+    /// <summary>Wrapper around SKBitmap.ExtractSubset (instance API writes into a dest).</summary>
+    private static SKBitmap ExtractSubset(SKBitmap src, SKRectI rect)
+    {
+        var dst = new SKBitmap(rect.Width, rect.Height, src.ColorType, src.AlphaType);
+        if (!src.ExtractSubset(dst, rect))
+        {
+            dst.Dispose();
+            throw new InvalidOperationException($"ExtractSubset failed for rect {rect}");
+        }
+        return dst;
+    }
+
+    private static BitmapImage ToBitmapImage(SKBitmap bmp)
     {
         var bi = new BitmapImage();
+        using var image = SKImage.FromBitmap(bmp);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         using var ms = new MemoryStream();
-        bmp.Save(ms, ImageFormat.Png);
+        data.SaveTo(ms);
         ms.Position = 0;
         bi.BeginInit();
         bi.CacheOption = BitmapCacheOption.OnLoad;
@@ -393,7 +400,12 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog() != true) return;
         try
         {
-            _lastFullSheet.Save(dlg.FileName, ImageFormat.Png);
+            using (var image = SKImage.FromBitmap(_lastFullSheet))
+            using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+            using (var fs = File.Create(dlg.FileName))
+            {
+                data.SaveTo(fs);
+            }
             // Always emit credits alongside (legally required attribution).
             var creditsPath = Path.ChangeExtension(dlg.FileName, ".credits.txt");
             File.WriteAllText(creditsPath, BuildCreditsText());

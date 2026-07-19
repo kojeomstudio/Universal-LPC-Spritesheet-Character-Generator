@@ -6,6 +6,12 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <!--
+      WPF UI also consumes SKBitmap (preview/export) since Core now returns SKBitmap
+      instead of System.Drawing.Bitmap. SkiaSharp.NativeAssets.Win32 is pulled in
+      transitively by the SkiaSharp meta-package.
+    -->
+    <PackageReference Include="SkiaSharp" Version="3.119.0" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,0 +1,72 @@
+Third-Party Notices — LpcSpriteGen (.NET port)
+
+This file documents third-party dependencies used by the C#/.NET port of the
+Universal LPC Spritesheet Character Generator. Each entry includes the license
+under which the dependency is distributed.
+
+================================================================================
+SkiaSharp 3.119.0
+================================================================================
+
+Used for: 2D image decoding, pixel-level palette recoloring, sprite-sheet
+          compositing, and PNG encoding. Replaces System.Drawing.Common
+          (which is Windows-only on .NET 6+).
+
+License:  MIT License
+
+Copyright (c) Microsoft Corporation
+Copyright (c) The Mono Team (Xamarin Inc)
+
+Upstream: https://github.com/mono/SkiaSharp
+NuGet:    https://www.nuget.org/packages/SkiaSharp/3.119.0
+
+SkiaSharp is a cross-platform .NET binding for the Skia graphics library
+(https://skia.org, BSD-3-Clause). The binding ships native binaries for
+Windows, macOS (incl. Apple Silicon), and Linux via transitive
+SkiaSharp.NativeAssets.* packages — no manual RID handling required.
+
+Full MIT License text:
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+================================================================================
+Skia (transitive via SkiaSharp.NativeAssets.*)
+================================================================================
+
+License:  BSD-3-Clause License
+Upstream: https://skia.org
+
+================================================================================
+CommunityToolkit.Mvvm 8.3.2 (WPF project only)
+================================================================================
+
+Used for: MVVM source generators in the WPF GUI.
+License:  MIT License
+Upstream: https://github.com/CommunityToolkit/dotnet
+
+================================================================================
+LPC Sprite Assets (data, not code)
+================================================================================
+
+The sprite assets under spritesheets/, sheet_definitions/, and palette_definitions/
+are predominantly CC-BY / CC-BY-SA / GPL / OGA-BY. Attribution is MANDATORY for
+every distribution of rendered sprites. The GUI and CLI auto-emit a credits.txt
+alongside each export; always ship the credits file with the sprites.
+
+See CREDITS.csv at the repository root for the full author/license list.

@@ -22,7 +22,6 @@
 //   0 = success   1 = partial failure   2 = bad args   3 = validation failure
 using System;
 using System.Collections.Generic;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -30,6 +29,7 @@ using System.Threading.Tasks;
 using LpcSpriteGen.Core.Catalog;
 using LpcSpriteGen.Core.Characters;
 using LpcSpriteGen.Core.Diagnostics;
+using SkiaSharp;
 
 namespace LpcSpriteGen.Headless;
 
@@ -218,7 +218,10 @@ internal static class Program
     private static async Task RenderAndSaveAsync(Core.Rendering.Renderer renderer, Selections selections, string bodyType, string outPath)
     {
         using var bmp = await renderer.RenderCharacterAsync(selections, bodyType);
-        bmp.Save(outPath, ImageFormat.Png);
+        using var image = SKImage.FromBitmap(bmp);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var fs = File.Create(outPath);
+        data.SaveTo(fs);
     }
 
     private static async Task RenderAndZipAsync(LpcCatalog cat, Core.Rendering.Renderer renderer, Selections selections, string bodyType, string outPath, string format)

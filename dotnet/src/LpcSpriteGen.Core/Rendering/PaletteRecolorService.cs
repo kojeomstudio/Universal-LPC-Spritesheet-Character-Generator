@@ -1,4 +1,4 @@
-// CPU palette recolor — replaces source-palette colors with target-palette colors in a Bitmap.
+// CPU palette recolor — replaces source-palette colors with target-palette colors in an SKBitmap.
 // Direct port of sources/canvas/palette-recolor.ts CPU path (WebGL is skipped — the CPU
 // path produces identical observable output and the tolerance values match).
 //
@@ -8,19 +8,20 @@
 //      matches within tolerance (<=1 per channel), replace RGB with the target (keep alpha).
 //   3. First-match-wins: palette order matters when colors overlap.
 //
-// LRU cache (cap 250) keyed by "spritePath|recolorsJson". Stores Task<Bitmap> to dedupe
+// LRU cache (cap 250) keyed by "spritePath|recolorsJson". Stores Task<SKBitmap> to dedupe
 // concurrent calls (matches the TS Promise-based cache).
+//
+// Image backend: SkiaSharp (MIT). Uses SKBitmap.GetPixelSpan() for direct BGRA byte access
+// (replaces System.Drawing LockBits + Marshal.Copy — SkiaSharp exposes the buffer directly).
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using LpcSpriteGen.Core.Catalog;
 using LpcSpriteGen.Core.Palettes;
+using SkiaSharp;
 
 namespace LpcSpriteGen.Core.Rendering;
 
@@ -42,7 +43,7 @@ public sealed class PaletteRecolorService
     private readonly PaletteResolver _paletteResolver;
     // LRU: linked-list of keys + dict mapping key → (node, task). LinkedListNode<string> in both.
     private readonly LinkedList<string> _lruOrder = new();
-    private readonly Dictionary<string, (LinkedListNode<string> Node, Task<Bitmap> Task)> _cache = new();
+    private readonly Dictionary<string, (LinkedListNode<string> Node, Task<SKBitmap> Task)> _cache = new();
 
     public PaletteRecolorService(LpcCatalog catalog)
     {
@@ -56,7 +57,7 @@ public sealed class PaletteRecolorService
     /// original bitmap unchanged when no recolors apply. Cached per (spritePath, recolors).
     /// Port of palette-recolor.ts:getImageToDraw.
     /// </summary>
-    public Task<Bitmap> RecolorAsync(Bitmap src, string itemId, Dictionary<string, string>? recolors, string? spritePath)
+    public Task<SKBitmap> RecolorAsync(SKBitmap src, string itemId, Dictionary<string, string>? recolors, string? spritePath)
     {
         if (recolors == null || recolors.Count == 0) return Task.FromResult(src);
 
@@ -116,7 +117,7 @@ public sealed class PaletteRecolorService
         return task;
     }
 
-    private Bitmap RecolorWithPalette(Bitmap src, string itemId, Dictionary<string, string> recolors)
+    private SKBitmap RecolorWithPalette(SKBitmap src, string itemId, Dictionary<string, string> recolors)
     {
         var itemR = _catalog.GetItem(itemId);
         if (!itemR.IsOk) return src;
@@ -159,54 +160,44 @@ public sealed class PaletteRecolorService
     }
 
     /// <summary>Per-pixel recolor. Port of palette-recolor.ts:recolorImageCPU.</summary>
-    internal static Bitmap RecolorImage(Bitmap src, List<ColorPair> pairs)
+    internal static SKBitmap RecolorImage(SKBitmap src, List<ColorPair> pairs)
     {
         int w = src.Width, h = src.Height;
-        var dst = new Bitmap(w, h, PixelFormat.Format32bppArgb);
-        var srcRect = new Rectangle(0, 0, w, h);
-        var srcData = src.LockBits(srcRect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-        var dstData = dst.LockBits(srcRect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        var dst = new SKBitmap(w, h, SKColorType.Bgra8888, SKAlphaType.Premul);
 
-        try
+        // Direct span access — SkiaSharp exposes the underlying pixel buffer without
+        // pin/unpin or Marshal.Copy round-trips. BGRA byte order (matches the old
+        // System.Drawing Format32bppArgb layout: B,G,R,A in memory on little-endian).
+        var srcSpan = src.GetPixelSpan();
+        var dstSpan = dst.GetPixelSpan();
+        // Span is typed as byte; pixels are 4 bytes apart (BGRA).
+        int bytes = srcSpan.Length;
+        for (int i = 0; i < bytes; i += 4)
         {
-            int bytes = Math.Abs(srcData.Stride) * h;
-            var srcBytes = new byte[bytes];
-            var dstBytes = new byte[bytes];
-            Marshal.Copy(srcData.Scan0, srcBytes, 0, bytes);
-
-            for (int i = 0; i < bytes; i += 4)
+            byte b = srcSpan[i], g = srcSpan[i + 1], r = srcSpan[i + 2], a = srcSpan[i + 3];
+            if (a == 0) // transparent pixels untouched
             {
-                byte b = srcBytes[i], g = srcBytes[i + 1], r = srcBytes[i + 2], a = srcBytes[i + 3];
-                if (a == 0) // transparent pixels untouched
+                dstSpan[i] = b; dstSpan[i + 1] = g; dstSpan[i + 2] = r; dstSpan[i + 3] = a;
+                continue;
+            }
+            // First-match-wins scan.
+            bool matched = false;
+            foreach (var p in pairs)
+            {
+                if (Math.Abs(r - p.SR) <= Tolerance &&
+                    Math.Abs(g - p.SG) <= Tolerance &&
+                    Math.Abs(b - p.SB) <= Tolerance)
                 {
-                    dstBytes[i] = b; dstBytes[i + 1] = g; dstBytes[i + 2] = r; dstBytes[i + 3] = a;
-                    continue;
-                }
-                // First-match-wins scan.
-                bool matched = false;
-                foreach (var p in pairs)
-                {
-                    if (Math.Abs(r - p.SR) <= Tolerance &&
-                        Math.Abs(g - p.SG) <= Tolerance &&
-                        Math.Abs(b - p.SB) <= Tolerance)
-                    {
-                        dstBytes[i] = p.TB; dstBytes[i + 1] = p.TG; dstBytes[i + 2] = p.TR;
-                        dstBytes[i + 3] = a; // alpha unchanged
-                        matched = true;
-                        break;
-                    }
-                }
-                if (!matched)
-                {
-                    dstBytes[i] = b; dstBytes[i + 1] = g; dstBytes[i + 2] = r; dstBytes[i + 3] = a;
+                    dstSpan[i] = p.TB; dstSpan[i + 1] = p.TG; dstSpan[i + 2] = p.TR;
+                    dstSpan[i + 3] = a; // alpha unchanged
+                    matched = true;
+                    break;
                 }
             }
-            Marshal.Copy(dstBytes, 0, dstData.Scan0, bytes);
-        }
-        finally
-        {
-            src.UnlockBits(srcData);
-            dst.UnlockBits(dstData);
+            if (!matched)
+            {
+                dstSpan[i] = b; dstSpan[i + 1] = g; dstSpan[i + 2] = r; dstSpan[i + 3] = a;
+            }
         }
         return dst;
     }

@@ -1,16 +1,29 @@
-# LPC Sprite Generator — C# / WPF port
+# LPC Sprite Generator — C# / .NET port
 
-A native Windows port of the [Universal LPC Sprite Sheet Character Generator](https://github.com/sanderfrenken/Universal-LPC-Spritesheet-Character-Generator), built with .NET 8 + WPF. The original TypeScript/Mithril/Electron project is preserved unchanged one directory up; this is an independent implementation that shares the same source data (`sheet_definitions/`, `palette_definitions/`, `spritesheets/`) but renders via `System.Drawing.Common` instead of canvas/WebGL.
+A cross-platform port of the [Universal LPC Sprite Sheet Character Generator](https://github.com/sanderfrenken/Universal-LPC-Spritesheet-Character-Generator), built with .NET 8 + WPF + SkiaSharp. The original TypeScript/Mithril/Electron project is preserved unchanged one directory up; this is an independent implementation that shares the same source data (`sheet_definitions/`, `palette_definitions/`, `spritesheets/`) but renders via **SkiaSharp** instead of canvas/WebGL.
+
+## Cross-platform image backend
+
+The image backend is **SkiaSharp 3.119.0 (MIT License)**, which replaces the original `System.Drawing.Common` (Windows-only on .NET 6+). This change unlocks:
+
+- **macOS (Intel + Apple Silicon), Linux x64/arm64** rendering — previously blocked by GDI+/`Gdip` runtime errors
+- **100% managed with bundled native binaries** — SkiaSharp.NativeAssets.* packages ship `libskiaSharp` per platform automatically; no manual RID handling
+- **Comparable performance** to GDI+ for the per-pixel palette recoloring hot path (`SKBitmap.GetPixelSpan()` direct memory access replaces `LockBits` + `Marshal.Copy`)
+
+The WPF GUI project remains Windows-only (`net8.0-windows` + `UseWPF`), but the Core library and Headless CLI target plain `net8.0` and run on every platform SkiaSharp supports.
+
+See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) for full license details (SkiaSharp: MIT, transitive Skia: BSD-3-Clause).
 
 ## Layout
 
 ```
 dotnet/
-├─ LpcSpriteGen.sln
+├─ LpcSpriteGen.slnx
 ├─ src/
 │  ├─ LpcSpriteGen.Core/         # Pure C# logic — catalog, paths, palette recolor, renderer, random, ZIP
-│  ├─ LpcSpriteGen.Headless/     # CLI (AI-agent friendly)
-│  └─ LpcSpriteGen.Wpf/          # 3-panel GUI
+│  │                             # (targets net8.0 — cross-platform, uses SkiaSharp)
+│  ├─ LpcSpriteGen.Headless/     # CLI (AI-agent friendly, cross-platform)
+│  └─ LpcSpriteGen.Wpf/          # 3-panel GUI (Windows only — net8.0-windows)
 └─ tests/
    └─ LpcSpriteGen.Core.Tests/   # xUnit (30 tests, includes a 99.99% pixel-parity check against the JS baseline)
 ```
@@ -18,9 +31,18 @@ dotnet/
 ## Build
 
 ```bash
-# From this directory. Requires .NET 8 SDK (net8.0-windows).
-dotnet build LpcSpriteGen.sln -c Release
+# From this directory. Requires .NET 8 SDK (8.0.100+) on any platform.
+dotnet build LpcSpriteGen.slnx -c Release       # all projects (WPF needs EnableWindowsTargeting=true on non-Windows)
+dotnet build src/LpcSpriteGen.Core/LpcSpriteGen.Core.csproj -c Release                # Core only
+dotnet build src/LpcSpriteGen.Headless/LpcSpriteGen.Headless.csproj -c Release        # Headless CLI only
 dotnet test tests/LpcSpriteGen.Core.Tests/LpcSpriteGen.Core.Tests.csproj
+```
+
+**On macOS / Linux**, the Headless CLI builds and runs natively (verified on Apple M3 Pro):
+
+```bash
+dotnet build src/LpcSpriteGen.Headless/LpcSpriteGen.Headless.csproj -c Release
+dotnet src/LpcSpriteGen.Headless/bin/Release/net8.0/LpcSpriteGen.Headless.dll --random --output out.png
 ```
 
 Single-file binaries (publish):
@@ -94,7 +116,8 @@ Every run writes a timestamped log to `<exe-dir>/log/lpc-<stamp>-<pid>.log` and 
 ## Differences from the JS/Electron project
 
 - **No URL hash state** — replaced with explicit `.json` file save/load. (Removed ~500 lines of alias-resolution machinery.)
-- **No WebGL** — uses the proven CPU palette-recolor path (tolerance=1/channel, first-match-wins, LRU cache). Produces 99.99% pixel-identical output to the WebGL path on the test baseline.
+- **No WebGL** — uses the proven CPU palette-recolor path (tolerance=1/channel, first-match-wins, LRU cache) implemented via SkiaSharp `GetPixelSpan()` direct memory access. Produces 99.99% pixel-identical output to the WebGL path on the test baseline.
+- **Cross-platform rendering via SkiaSharp (MIT)** — `System.Drawing.Common` was Windows-only on .NET 6+, which blocked macOS/Linux. SkiaSharp ships native binaries for win/macos/linux (incl. Apple Silicon) transitively, with no manual RID handling.
 - **7 random-generator bugs fixed** (head type_name, body.ulpc palette keys, mandatory head/expression inclusion, deterministic seeds, etc.) — see `RandomGeneratorTests`.
 - **Binaries are ~15–25MB** single-file, self-contained — no Electron/Chromium runtime.
 - **No `alert()` dialogs, no sponsor banner, no web chunk-loading** — replaced with native WPF UI / synchronous in-memory catalog load.

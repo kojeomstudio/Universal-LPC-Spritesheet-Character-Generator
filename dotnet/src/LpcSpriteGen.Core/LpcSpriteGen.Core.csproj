@@ -1,16 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- System.Drawing.Common is Windows-only; target Windows directly to avoid CA1416 warnings. -->
-    <UseWindowsForms>false</UseWindowsForms>
-    <UseWPF>false</UseWPF>
+    <!--
+      Cross-platform image backend: SkiaSharp (MIT) replaces System.Drawing.Common.
+      System.Drawing.Common is Windows-only on .NET 6+ (.NET 7+ removed the Unix
+      support switch entirely), which blocked macOS/Linux rendering. SkiaSharp 3.x
+      ships native assets for win/macos/linux (incl. Apple Silicon) via transitive
+      SkiaSharp.NativeAssets.* packages — no manual RID handling needed.
+    -->
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.0" />
   </ItemGroup>
 
 </Project>
