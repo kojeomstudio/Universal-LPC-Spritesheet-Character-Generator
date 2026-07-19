@@ -1,0 +1,48 @@
+{
+  "bodyType": "male",
+  "selections": {
+    "body": {
+      "itemId": "body",
+      "recolor": "olive"
+    },
+    "head": {
+      "itemId": "heads_human_male",
+      "recolor": "olive"
+    },
+    "expression": {
+      "itemId": "face_neutral",
+      "recolor": "olive"
+    },
+    "ears": {
+      "itemId": "head_ears_medium"
+    },
+    "hair": {
+      "itemId": "hair_ponytail",
+      "recolor": "ulpc.black"
+    },
+    "clothes": {
+      "itemId": "torso_armour_leather",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "legs": {
+      "itemId": "legs_pants",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "shoes": {
+      "itemId": "feet_boots_basic",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "hat": {
+      "itemId": "hat_hood_cloth",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "weapon": {
+      "itemId": "weapon_ranged_bow_recurve",
+      "recolor": "wood.ulpc.oak"
+    },
+    "quiver": {
+      "itemId": "quiver",
+      "recolor": "cloth.ulpc.brown"
+    }
+  }
+}

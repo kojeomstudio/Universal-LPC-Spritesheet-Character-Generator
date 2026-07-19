@@ -1,0 +1,34 @@
+{
+  "bodyType": "male",
+  "selections": {
+    "body": {
+      "itemId": "body_skeleton"
+    },
+    "head": {
+      "itemId": "heads_skeleton"
+    },
+    "expression": {
+      "itemId": "face_neutral"
+    },
+    "clothes": {
+      "itemId": "torso_clothes_longsleeve",
+      "recolor": "cloth.ulpc.navy"
+    },
+    "legs": {
+      "itemId": "legs_pants",
+      "recolor": "cloth.ulpc.navy"
+    },
+    "shoes": {
+      "itemId": "feet_boots_basic",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "weapon": {
+      "itemId": "weapon_sword_longsword",
+      "recolor": "metal.ulpc.steel"
+    },
+    "hat": {
+      "itemId": "hat_helmet_barbuta",
+      "recolor": "metal.ulpc.iron"
+    }
+  }
+}

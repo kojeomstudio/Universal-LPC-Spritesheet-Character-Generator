@@ -1,0 +1,48 @@
+{
+  "bodyType": "female",
+  "selections": {
+    "body": {
+      "itemId": "body",
+      "recolor": "olive"
+    },
+    "head": {
+      "itemId": "heads_human_female",
+      "recolor": "olive"
+    },
+    "expression": {
+      "itemId": "face_neutral",
+      "recolor": "olive"
+    },
+    "ears": {
+      "itemId": "head_ears_medium"
+    },
+    "hair": {
+      "itemId": "hair_bangs",
+      "recolor": "ulpc.brown"
+    },
+    "clothes": {
+      "itemId": "torso_clothes_longsleeve",
+      "recolor": "cloth.ulpc.black"
+    },
+    "legs": {
+      "itemId": "legs_pants",
+      "recolor": "cloth.ulpc.black"
+    },
+    "shoes": {
+      "itemId": "feet_boots_basic",
+      "recolor": "cloth.ulpc.black"
+    },
+    "cape": {
+      "itemId": "cape_solid",
+      "recolor": "cloth.ulpc.black"
+    },
+    "hat": {
+      "itemId": "hat_hood_cloth",
+      "recolor": "cloth.ulpc.black"
+    },
+    "weapon": {
+      "itemId": "weapon_sword_dagger",
+      "recolor": "metal.ulpc.steel"
+    }
+  }
+}

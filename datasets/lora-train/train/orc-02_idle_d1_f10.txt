@@ -1,0 +1,1 @@
+pxlart sprite, monster, orc, leather armor, mace, idle, facing left, orc green skin

@@ -1,0 +1,40 @@
+{
+  "bodyType": "male",
+  "selections": {
+    "body": {
+      "itemId": "body_zombie",
+      "recolor": "green"
+    },
+    "head": {
+      "itemId": "heads_zombie",
+      "recolor": "green"
+    },
+    "expression": {
+      "itemId": "face_angry",
+      "recolor": "green"
+    },
+    "ears": {
+      "itemId": "head_ears_big"
+    },
+    "hair": {
+      "itemId": "hair_unkempt",
+      "recolor": "ulpc.black"
+    },
+    "clothes": {
+      "itemId": "torso_clothes_tshirt",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "legs": {
+      "itemId": "legs_shorts",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "shoes": {
+      "itemId": "feet_armour",
+      "recolor": "metal.ulpc.bronze"
+    },
+    "beard": {
+      "itemId": "beards_5oclock_shadow",
+      "recolor": "ulpc.black"
+    }
+  }
+}

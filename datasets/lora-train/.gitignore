@@ -1,0 +1,19 @@
+# LoRA 트레인셋 산출물 중 재현 가능한 대용량 파일은 추적 제외.
+# 스크립트/selections/train 만 트랙한다.
+
+# 카탈로그/아이템 덤프 (도구의 --dump-catalog / --list-items 로 언제든 재생성)
+catalog.json
+items.json
+
+# zip-frame 원본 아카이브 (gen_selections → gen_manifest → 렌더 → build_train 으로 재현)
+sheets/
+
+# manifest.json (gen_manifest.py 로 재현 가능)
+manifest.json
+
+# 빈 frames 폴더 (현재 사용 안 함)
+frames/
+
+# 렌더링 중간 로그
+*.log
+log/

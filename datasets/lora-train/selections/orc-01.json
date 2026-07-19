@@ -1,0 +1,44 @@
+{
+  "bodyType": "male",
+  "selections": {
+    "body": {
+      "itemId": "body",
+      "recolor": "dark_green"
+    },
+    "head": {
+      "itemId": "heads_orc_male",
+      "recolor": "dark_green"
+    },
+    "expression": {
+      "itemId": "face_angry",
+      "recolor": "dark_green"
+    },
+    "ears": {
+      "itemId": "head_ears_big"
+    },
+    "hair": {
+      "itemId": "hair_ponytail",
+      "recolor": "ulpc.black"
+    },
+    "clothes": {
+      "itemId": "torso_armour_leather",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "legs": {
+      "itemId": "legs_pants",
+      "recolor": "cloth.ulpc.brown"
+    },
+    "shoes": {
+      "itemId": "feet_boots_basic",
+      "recolor": "cloth.ulpc.black"
+    },
+    "shoulders": {
+      "itemId": "shoulders_pauldrons",
+      "recolor": "metal.ulpc.bronze"
+    },
+    "weapon": {
+      "itemId": "weapon_blunt_mace",
+      "recolor": "metal.ulpc.iron"
+    }
+  }
+}

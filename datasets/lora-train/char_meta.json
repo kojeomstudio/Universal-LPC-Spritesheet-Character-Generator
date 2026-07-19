@@ -1,0 +1,236 @@
+{
+  "knight-01": {
+    "bodyType": "male",
+    "class": "knight",
+    "gender_tag": "1boy",
+    "skin_label": "light skin",
+    "hair_label": "blonde",
+    "gear_color_label": "steel"
+  },
+  "knight-02": {
+    "bodyType": "male",
+    "class": "knight",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "brown",
+    "gear_color_label": "iron"
+  },
+  "knight-03": {
+    "bodyType": "female",
+    "class": "knight",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "red",
+    "gear_color_label": "steel"
+  },
+  "knight-04": {
+    "bodyType": "female",
+    "class": "knight",
+    "gender_tag": "1girl",
+    "skin_label": "olive skin",
+    "hair_label": "black",
+    "gear_color_label": "bronze"
+  },
+  "mage-01": {
+    "bodyType": "female",
+    "class": "mage",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "blonde",
+    "gear_color_label": "purple"
+  },
+  "mage-02": {
+    "bodyType": "male",
+    "class": "mage",
+    "gender_tag": "1boy",
+    "skin_label": "light skin",
+    "hair_label": "black",
+    "gear_color_label": "blue"
+  },
+  "mage-03": {
+    "bodyType": "female",
+    "class": "mage",
+    "gender_tag": "1girl",
+    "skin_label": "olive skin",
+    "hair_label": "red",
+    "gear_color_label": "red"
+  },
+  "mage-04": {
+    "bodyType": "male",
+    "class": "mage",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "brown",
+    "gear_color_label": "navy"
+  },
+  "archer-01": {
+    "bodyType": "male",
+    "class": "archer",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "brown",
+    "gear_color_label": "forest"
+  },
+  "archer-02": {
+    "bodyType": "female",
+    "class": "archer",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "red",
+    "gear_color_label": "leather"
+  },
+  "archer-03": {
+    "bodyType": "male",
+    "class": "archer",
+    "gender_tag": "1boy",
+    "skin_label": "olive skin",
+    "hair_label": "black",
+    "gear_color_label": "brown"
+  },
+  "archer-04": {
+    "bodyType": "female",
+    "class": "archer",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "blonde",
+    "gear_color_label": "green"
+  },
+  "rogue-01": {
+    "bodyType": "male",
+    "class": "rogue",
+    "gender_tag": "1boy",
+    "skin_label": "light skin",
+    "hair_label": "black",
+    "gear_color_label": "navy"
+  },
+  "rogue-02": {
+    "bodyType": "female",
+    "class": "rogue",
+    "gender_tag": "1girl",
+    "skin_label": "olive skin",
+    "hair_label": "brown",
+    "gear_color_label": "black"
+  },
+  "rogue-03": {
+    "bodyType": "male",
+    "class": "rogue",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "red",
+    "gear_color_label": "maroon"
+  },
+  "rogue-04": {
+    "bodyType": "female",
+    "class": "rogue",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "black",
+    "gear_color_label": "teal"
+  },
+  "cleric-01": {
+    "bodyType": "female",
+    "class": "cleric",
+    "gender_tag": "1girl",
+    "skin_label": "light skin",
+    "hair_label": "blonde",
+    "gear_color_label": "white"
+  },
+  "cleric-02": {
+    "bodyType": "male",
+    "class": "cleric",
+    "gender_tag": "1boy",
+    "skin_label": "light skin",
+    "hair_label": "brown",
+    "gear_color_label": "lavender"
+  },
+  "cleric-03": {
+    "bodyType": "female",
+    "class": "cleric",
+    "gender_tag": "1girl",
+    "skin_label": "olive skin",
+    "hair_label": "red",
+    "gear_color_label": "rose"
+  },
+  "cleric-04": {
+    "bodyType": "male",
+    "class": "cleric",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "black",
+    "gear_color_label": "yellow"
+  },
+  "barbarian-01": {
+    "bodyType": "male",
+    "class": "barbarian",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "red",
+    "gear_color_label": "brown"
+  },
+  "barbarian-02": {
+    "bodyType": "male",
+    "class": "barbarian",
+    "gender_tag": "1boy",
+    "skin_label": "olive skin",
+    "hair_label": "black",
+    "gear_color_label": "maroon"
+  },
+  "barbarian-03": {
+    "bodyType": "male",
+    "class": "barbarian",
+    "gender_tag": "1boy",
+    "skin_label": "tan skin",
+    "hair_label": "brown",
+    "gear_color_label": "forest"
+  },
+  "barbarian-04": {
+    "bodyType": "male",
+    "class": "barbarian",
+    "gender_tag": "1boy",
+    "skin_label": "amber skin",
+    "hair_label": "blonde",
+    "gear_color_label": "tan"
+  },
+  "zombie-01": {
+    "bodyType": "male",
+    "class": "zombie",
+    "gender_tag": "monster",
+    "skin_label": "zombie green skin"
+  },
+  "zombie-02": {
+    "bodyType": "male",
+    "class": "zombie",
+    "gender_tag": "monster",
+    "skin_label": "zombie green skin"
+  },
+  "zombie-03": {
+    "bodyType": "male",
+    "class": "zombie",
+    "gender_tag": "monster",
+    "skin_label": "zombie green skin"
+  },
+  "skeleton-01": {
+    "bodyType": "male",
+    "class": "skeleton",
+    "gender_tag": "monster",
+    "skin_label": "bone"
+  },
+  "skeleton-02": {
+    "bodyType": "male",
+    "class": "skeleton",
+    "gender_tag": "monster",
+    "skin_label": "bone"
+  },
+  "orc-01": {
+    "bodyType": "male",
+    "class": "orc",
+    "gender_tag": "monster",
+    "skin_label": "orc green skin"
+  },
+  "orc-02": {
+    "bodyType": "male",
+    "class": "orc",
+    "gender_tag": "monster",
+    "skin_label": "orc green skin"
+  }
+}
