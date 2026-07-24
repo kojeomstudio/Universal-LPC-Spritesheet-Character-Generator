@@ -99,6 +99,11 @@ def parse_args() -> argparse.Namespace:
                         "(e.g. '1girl adventurer, brown ponytail, leather armor')")
     p.add_argument("--min-opacity", type=int, default=10,
                    help="skip frames whose max alpha is below this (0-255, default 10)")
+    p.add_argument("--concept", default="lpc_sprite",
+                   help="concept name for the Dreambooth subfolder (default lpc_sprite). "
+                        "Frames are written to <output>/<repeats>_<concept>/")
+    p.add_argument("--num-repeats", type=int, default=4,
+                   help="image repeats encoded in the subfolder name (default 4)")
     p.add_argument("--toml", choices=["on", "off"], default="on",
                    help="also emit a kohya dataset.toml (default on)")
     return p.parse_args()
@@ -178,10 +183,17 @@ def build_caption(spec: str, anim_name: str, dir_name: str, char_desc: str) -> s
     return ", ".join(parts)
 
 
-def write_toml(output_dir: Path, size: int) -> Path:
-    """Emit a kohya-ss dataset TOML pointing at the generated frames."""
+def write_toml(output_dir: Path, size: int, concept_dir: Path, num_repeats: int = 4) -> Path:
+    """Emit a kohya-ss dataset TOML pointing at the generated frames.
+
+    Uses the Dreambooth layout: images live under <concept_dir> named
+    '<repeats>_<concept>' (e.g. '4_lpc_sprite'). This is what kohya GUI's
+    Dreambooth method validates against — a flat folder of images next to a
+    dataset.toml triggers the 'subfolders do not match <repeats>_<name>' error.
+    """
     toml_path = output_dir / "dataset.toml"
-    content = f"""# kohya-ss / sd-scripts dataset config (generated).
+    content = f"""# kohya-ss / sd-scripts dataset config (Dreambooth layout).
+# Images live in {concept_dir.name} (repeats={num_repeats}).
 # Docs: https://github.com/kohya-ss/sd-scripts/blob/main/docs/config_README-en.md
 
 [general]
@@ -194,8 +206,8 @@ resolution = {size}
 batch_size = 1
 
   [[datasets.subsets]]
-  image_dir = "{output_dir.resolve()}"
-  num_repeats = 4
+  image_dir = "{concept_dir.resolve()}"
+  num_repeats = {num_repeats}
 """
     toml_path.write_text(content, encoding="utf-8")
     return toml_path
@@ -211,7 +223,13 @@ def main() -> int:
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
-    (output_dir / "captions").mkdir(exist_ok=True)  # mirror of captions if needed
+
+    # Dreambooth layout: images go into <output>/<repeats>_<concept>/ so kohya's
+    # Dreambooth method validation passes (it requires subfolders named
+    # <repeats>_<name>, NOT a flat folder of images next to dataset.toml).
+    concept_name = args.concept
+    concept_dir = output_dir / f"{args.num_repeats}_{concept_name}"
+    concept_dir.mkdir(parents=True, exist_ok=True)
 
     spec = args.caption_spec
     char_desc = args.char_desc
@@ -227,19 +245,19 @@ def main() -> int:
                 continue
             big = upscale_nearest(frame, args.size)
 
-            img_path = output_dir / f"{label}.png"
+            img_path = concept_dir / f"{label}.png"
             big.save(img_path, format="PNG")
 
             anim, dir_name = _decode_label(label)
             caption = build_caption(spec, anim, dir_name, char_desc)
-            (output_dir / f"{label}.txt").write_text(caption, encoding="utf-8")
+            (concept_dir / f"{label}.txt").write_text(caption, encoding="utf-8")
             total_written += 1
 
     print(f"\nDone. Wrote {total_written} frames, skipped {total_skipped} empty.")
     print(f"Output: {output_dir}")
 
     if args.toml == "on":
-        toml = write_toml(output_dir, args.size)
+        toml = write_toml(output_dir, args.size, concept_dir, args.num_repeats)
         print(f"kohya TOML: {toml}")
 
     return 0
