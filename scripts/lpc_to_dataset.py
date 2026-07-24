@@ -197,7 +197,7 @@ def write_toml(output_dir: Path, size: int, concept_dir: Path, num_repeats: int 
 # Docs: https://github.com/kohya-ss/sd-scripts/blob/main/docs/config_README-en.md
 
 [general]
-shuffle_caption = true
+shuffle_caption = false
 caption_extension = ".txt"
 keep_tokens = 1        # protect the spec prefix tokens from shuffling
 
