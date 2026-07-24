@@ -20,6 +20,11 @@ computed-style-diff-output/
 /out-electron/
 build-resources/
 
+# LPC → SD dataset conversion output (lpc_to_dataset.py).
+# Datasets are owned by the consumer (tools/sd-lora-trainer/workspace/datasets/),
+# not by this generator. This folder is a stale empty leftover — keep ignored.
+/dataset/
+
 # .NET / C# 포팅(dotnet/) 빌드 산출물
 dotnet/**/bin/
 dotnet/**/obj/
