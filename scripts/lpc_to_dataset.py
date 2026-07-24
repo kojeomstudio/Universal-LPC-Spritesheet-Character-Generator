@@ -99,6 +99,10 @@ def parse_args() -> argparse.Namespace:
                         "(e.g. '1girl adventurer, brown ponytail, leather armor')")
     p.add_argument("--min-opacity", type=int, default=10,
                    help="skip frames whose max alpha is below this (0-255, default 10)")
+    p.add_argument("--directions", default="all",
+                   help="comma-separated directions to keep (default: all). "
+                        "Example: 'north,south,east,west' to exclude single-direction anims "
+                        "like hurt/climb. Use 'all' to keep everything.")
     p.add_argument("--concept", default="lpc_sprite",
                    help="concept name for the Dreambooth subfolder (default lpc_sprite). "
                         "Frames are written to <output>/<repeats>_<concept>/")
@@ -236,6 +240,12 @@ def main() -> int:
     total_written = 0
     total_skipped = 0
 
+    # Parse direction filter. "all" = keep everything; otherwise keep only
+    # frames whose decoded direction is in the allowed set.
+    allowed_dirs = None if args.directions == "all" else set(
+        d.strip() for d in args.directions.split(",")
+    )
+
     for sheet in inputs:
         print(f"Processing {sheet.name}...")
         frames = split_sheet(sheet, args.source_size)
@@ -243,12 +253,19 @@ def main() -> int:
             if not has_content(frame, args.min_opacity):
                 total_skipped += 1
                 continue
+
+            anim, dir_name = _decode_label(label)
+
+            # Direction filter: skip frames not in the allowed set.
+            if allowed_dirs is not None and dir_name not in allowed_dirs:
+                total_skipped += 1
+                continue
+
             big = upscale_nearest(frame, args.size)
 
             img_path = concept_dir / f"{label}.png"
             big.save(img_path, format="PNG")
 
-            anim, dir_name = _decode_label(label)
             caption = build_caption(spec, anim, dir_name, char_desc)
             (concept_dir / f"{label}.txt").write_text(caption, encoding="utf-8")
             total_written += 1
